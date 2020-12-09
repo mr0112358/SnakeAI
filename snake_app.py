@@ -23,7 +23,7 @@ SQUARE_SIZE = (35, 35)
 
 
 class MainWindow(QtWidgets.QMainWindow):
-    def __init__(self, settings, show=True, fps=200):
+    def __init__(self, settings, show=True, fps=30):
         super().__init__()
         self.setAutoFillBackground(True)
         palette = self.palette()
@@ -63,15 +63,21 @@ class MainWindow(QtWidgets.QMainWindow):
         self.left = 150
         self.width = self._snake_widget_width + 700 + self.border[0] + self.border[2]
         self.height = self._snake_widget_height + self.border[1] + self.border[3] + 200
-        
+
+        self.best_score_all = []
+        self.avg_fitness_all = []        
+
         individuals: List[Individual] = []
 
-        for _ in range(self.settings['num_parents']):
-            individual = Snake(self.board_size, hidden_layer_architecture=self.settings['hidden_network_architecture'],
-                              hidden_activation=self.settings['hidden_layer_activation'],
-                              output_activation=self.settings['output_layer_activation'],
-                              lifespan=self.settings['lifespan'],
-                              apple_and_self_vision=self.settings['apple_and_self_vision'])
+#        for _ in range(self.settings['num_parents']):
+#            individual = Snake(self.board_size, hidden_layer_architecture=self.settings['hidden_network_architecture'],
+#                              hidden_activation=self.settings['hidden_layer_activation'],
+#                              output_activation=self.settings['output_layer_activation'],
+#                              lifespan=self.settings['lifespan'],
+#                              apple_and_self_vision=self.settings['apple_and_self_vision'])
+#            individuals.append(individual)
+        for _ in range(50):
+            individual = load_snake('population', 'best_snake_gen'+str(_), './population/settings.json')
             individuals.append(individual)
 
         self.best_fitness = 0
@@ -163,6 +169,11 @@ class MainWindow(QtWidgets.QMainWindow):
                 print('----Max fitness:', self.population.fittest_individual.fitness)
                 print('----Best Score:', self.population.fittest_individual.score)
                 print('----Average fitness:', self.population.average_fitness)
+                self.best_score_all.append(self.population.fittest_individual.score)
+                self.avg_fitness_all.append(self.population.average_fitness)
+                if self.current_generation == 100:
+                    print(self.best_score_all)
+                    print(self.avg_fitness_all)
                 self.next_generation()
             else:
                 current_pop = self.settings['num_parents'] if self.current_generation == 0 else self._next_gen_size
@@ -171,6 +182,9 @@ class MainWindow(QtWidgets.QMainWindow):
             self.snake = self.population.individuals[self._current_individual]
             self.snake_widget_window.snake = self.snake
             self.nn_viz_window.snake = self.snake
+           # if self.current_generation %5==0:
+           #     save_snake('./population', 'best_snake_gen' + str(self.current_generation), self.population.fittest_individual, self.settings)
+           #save_snake('./population', 'best_snake_gen' + str(self.current_generation), self.population.fittest_individual, self.settings)
 
     def next_generation(self):
         self._increment_generation()
@@ -425,7 +439,7 @@ class GeneticAlgoWidget(QtWidgets.QWidget):
         ROW += 1
 
         # Network architecture
-        network_architecture = '[{}, {}, 4]'.format(settings['vision_type'] * 3 + 4 + 4,
+        network_architecture = '[{}, {}, 4]'.format(27,#settings['vision_type'] * 3 + 4 +1,# + 4,
                                                     ', '.join([str(num_neurons) for num_neurons in settings['hidden_network_architecture']]))
         self._create_label_widget_in_grid('NN Architecture: ', font_bold, grid, ROW, LABEL_COL, TOP_LEFT)
         self._create_label_widget_in_grid(network_architecture, font, grid, ROW, STATS_COL, TOP_LEFT)
